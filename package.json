@@ -1,0 +1,44 @@
+{
+  "name": "sds-poc",
+  "version": "1.0.0",
+  "description": "Docker Container Intelligence POC using Niriksha AI — HTTP & gRPC",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "bundle": "npm run build && ncc build dist/index.js -o bundle --minify && node -e \"require('fs').copyFileSync('README.md','bundle/README.md')\"",
+    "package:linux": "npm run bundle && pkg bundle/index.js --target node18-linux-x64 --output release/sds-poc-linux",
+    "package:win": "npm run bundle && pkg bundle/index.js --target node18-win-x64 --output release/sds-poc-win.exe",
+    "package:all": "npm run bundle && pkg bundle/index.js --targets node18-linux-x64,node18-win-x64 --output release/sds-poc"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "dotenv": "^16.4.5",
+    "@nirikshaai/sdk": "latest",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-node": "0.52.1"
+  },
+  "overrides": {
+    "@opentelemetry/sdk-node": "0.52.1"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.29",
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "@vercel/ncc": "^0.38.1",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "node_modules/@grpc/grpc-js/**/*",
+      "node_modules/dockerode/**/*",
+      "bundle/README.md"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-win-x64"
+    ]
+  }
+}

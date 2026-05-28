@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SDS-POC Deployment & Integration Guide</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; padding: 40px; max-width: 900px; margin: auto; }
+    h1 { font-size: 22px; color: #0d47a1; border-bottom: 3px solid #0d47a1; padding-bottom: 8px; margin-bottom: 6px; }
+    h2 { font-size: 16px; color: #0d47a1; margin: 28px 0 10px; border-left: 4px solid #0d47a1; padding-left: 10px; }
+    h3 { font-size: 13px; color: #1565c0; margin: 16px 0 6px; }
+    p { margin: 6px 0 10px; line-height: 1.6; }
+    .subtitle { color: #555; font-size: 12px; margin-bottom: 24px; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 12px 16px; border-radius: 6px; font-size: 12px; margin: 8px 0 14px; overflow-x: auto; line-height: 1.6; }
+    code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: 'Consolas', monospace; color: #c7254e; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 12px; }
+    th { background: #0d47a1; color: #fff; padding: 8px 12px; text-align: left; }
+    td { padding: 7px 12px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+    tr:nth-child(even) td { background: #f5f8ff; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+    .badge-red { background: #ffebee; color: #c62828; }
+    .badge-green { background: #e8f5e9; color: #2e7d32; }
+    .badge-blue { background: #e3f2fd; color: #1565c0; }
+    .badge-orange { background: #fff3e0; color: #e65100; }
+    .step { display: flex; gap: 12px; margin: 10px 0; }
+    .step-num { min-width: 28px; height: 28px; background: #0d47a1; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; flex-shrink: 0; }
+    .step-content { flex: 1; padding-top: 4px; }
+    .box { border: 1px solid #bbdefb; background: #e3f2fd; border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+    .box-warn { border-color: #ffcc80; background: #fff8e1; }
+    .box-green { border-color: #a5d6a7; background: #e8f5e9; }
+    .divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 10px 0; }
+    .card { border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; }
+    .card h3 { margin-top: 0; }
+    @media print {
+      body { padding: 20px; }
+      pre { white-space: pre-wrap; }
+      .no-print { display: none; }
+    }
+    .toc { background: #f5f8ff; border: 1px solid #bbdefb; border-radius: 6px; padding: 14px 18px; margin: 18px 0 28px; }
+    .toc h3 { color: #0d47a1; margin-bottom: 8px; }
+    .toc ol { padding-left: 18px; line-height: 2; }
+    .toc a { color: #1565c0; text-decoration: none; }
+    .highlight { background: #fff9c4; padding: 1px 4px; border-radius: 3px; }
+    footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e0e0e0; color: #888; font-size: 11px; }
+  </style>
+</head>
+<body>
+
+  <h1>SDS-POC — Deployment & Integration Guide</h1>
+  <p class="subtitle">Docker Container Intelligence via Niriksha AI &nbsp;|&nbsp; Version 1.0 &nbsp;|&nbsp; 2026-05-28</p>
+
+  <div class="box no-print">
+    💡 <strong>To save as PDF:</strong> Press <code>Ctrl+P</code> → Change destination to <strong>Save as PDF</strong> → Save
+  </div>
+
+  <div class="toc">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#what-is-this">What is this POC?</a></li>
+      <li><a href="#files-to-copy">Files to Copy to Jumphost</a></li>
+      <li><a href="#env-values">Values to Update in .env</a></li>
+      <li><a href="#where-to-get">Where to Get Each Value</a></li>
+      <li><a href="#setup-jumphost">Setup on Jumphost</a></li>
+      <li><a href="#sdk-integration">Integrating the Niriksha AI SDK</a></li>
+      <li><a href="#run">How to Run</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ol>
+  </div>
+
+  <!-- SECTION 1 -->
+  <h2 id="what-is-this">1. What is this POC?</h2>
+  <p>
+    This POC connects <strong>Docker</strong> with <strong>Niriksha AI</strong> to automatically monitor running containers
+    and predict issues — without manually reading logs or checking stats.
+  </p>
+  <table>
+    <tr><th>Docker does</th><th>Niriksha AI does</th></tr>
+    <tr><td>Provides raw data — container state, logs, resource usage, volumes, ports</td><td>Analyzes the data and returns predictions, risk levels, and recommendations</td></tr>
+    <tr><td>Example: "Container 'api' restarted 5 times"</td><td>Example: "Crash loop detected — likely memory leak. Recommend setting memory limit."</td></tr>
+  </table>
+  <p>Supports both <span class="badge badge-blue">HTTP</span> and <span class="badge badge-orange">gRPC</span> transport to Niriksha AI. Controlled by one line in <code>.env</code>.</p>
+
+  <hr class="divider" />
+
+  <!-- SECTION 2 -->
+  <h2 id="files-to-copy">2. Files to Copy to Jumphost</h2>
+
+  <div class="box-warn box">
+    ⚠ The Niriksha AI SDK must be available on the jumphost. A ready-to-extract tar file is provided — copy it and extract on the jumphost.
+  </div>
+
+  <h3>You only need to copy ONE file</h3>
+  <table>
+    <tr><th>File</th><th>Location on your machine</th><th>Size</th></tr>
+    <tr><td><code>SDS-POC-deploy.tar.gz</code></td><td><code>C:\Users\DELL\SDS-POC-deploy.tar.gz</code></td><td>~44 KB</td></tr>
+  </table>
+
+  <h3>What is inside the tar</h3>
+  <table>
+    <tr><th>Included</th><th>Purpose</th><th>Excluded</th></tr>
+    <tr><td><code>src/</code></td><td>TypeScript source code</td><td><code>node_modules/</code> — installed fresh on jumphost</td></tr>
+    <tr><td><code>package.json</code></td><td>Dependency list</td><td><code>dist/</code> — built fresh on jumphost</td></tr>
+    <tr><td><code>tsconfig.json</code></td><td>TypeScript config</td><td><code>bundle/</code> — not needed</td></tr>
+    <tr><td><code>.env</code></td><td>Config template (update values after extract)</td><td><code>release/</code> — not needed</td></tr>
+    <tr><td><code>README.md</code></td><td>Full technical documentation</td><td></td></tr>
+    <tr><td><code>SDS-POC-Guide.html</code></td><td>This guide (open in browser on jumphost)</td><td></td></tr>
+  </table>
+
+  <h3>Copy to jumphost</h3>
+  <pre>
+# From your local Windows machine — run in PowerShell or terminal
+scp C:/Users/DELL/SDS-POC-deploy.tar.gz  user@jumphost-ip:/opt/</pre>
+
+  <hr class="divider" />
+
+  <!-- SECTION 3 -->
+  <h2 id="env-values">3. Values to Update in .env</h2>
+  <p>The <code>.env</code> file lives in <code>/opt/sds-poc/.env</code> on the jumphost. Edit it before running.</p>
+
+  <pre>
+# ── AI Transport ──────────────────────────────────────────────
+TRANSPORT=http                          # Change to: grpc  (if using gRPC)
+
+NIRIKSHA_TOKEN=&lt;your-token-here&gt;        # ← GET FROM: Niriksha team / portal
+
+NIRIKSHA_HTTP_ENDPOINT=&lt;url-here&gt;       # ← GET FROM: Niriksha team (HTTP only)
+NIRIKSHA_GRPC_ENDPOINT=&lt;host:port&gt;      # ← GET FROM: Niriksha team (gRPC only)
+
+# ── Docker Connection ─────────────────────────────────────────
+DOCKER_HOST=                            # Leave BLANK — same VM as Docker</pre>
+
+  <table>
+    <tr><th>Variable</th><th>Example Value</th><th>Required When</th></tr>
+    <tr><td><code>TRANSPORT</code></td><td><code>http</code> or <code>grpc</code></td><td>Always</td></tr>
+    <tr><td><code>NIRIKSHA_TOKEN</code></td><td><code>nrk_proj_abc123xyz</code></td><td>Always</td></tr>
+    <tr><td><code>NIRIKSHA_HTTP_ENDPOINT</code></td><td><code>https://ai.niriksha.io/api/analyze</code></td><td>When <code>TRANSPORT=http</code></td></tr>
+    <tr><td><code>NIRIKSHA_GRPC_ENDPOINT</code></td><td><code>ai.niriksha.io:50051</code></td><td>When <code>TRANSPORT=grpc</code></td></tr>
+    <tr><td><code>DOCKER_HOST</code></td><td>Leave blank</td><td>Leave blank if running on same VM as Docker</td></tr>
+  </table>
+
+  <hr class="divider" />
+
+  <!-- SECTION 4 -->
+  <h2 id="where-to-get">4. Where to Get Each Value</h2>
+
+  <table>
+    <tr><th>Value</th><th>Where to get it</th><th>Notes</th></tr>
+    <tr>
+      <td><code>NIRIKSHA_TOKEN</code></td>
+      <td>Niriksha AI portal or your team lead</td>
+      <td>This is your project API token. Treat it like a password — never commit to Git.</td>
+    </tr>
+    <tr>
+      <td><code>NIRIKSHA_HTTP_ENDPOINT</code></td>
+      <td>Niriksha team / SDK documentation</td>
+      <td>Full URL including path, e.g. <code>https://host/api/analyze</code></td>
+    </tr>
+    <tr>
+      <td><code>NIRIKSHA_GRPC_ENDPOINT</code></td>
+      <td>Niriksha team / SDK documentation</td>
+      <td>Format: <code>hostname:port</code> — no <code>https://</code> prefix</td>
+    </tr>
+    <tr>
+      <td>SDK package name</td>
+      <td>Niriksha team — download link or internal registry</td>
+      <td>Could be a <code>.tgz</code> file or a package name on an internal registry</td>
+    </tr>
+    <tr>
+      <td><code>DOCKER_HOST</code></td>
+      <td>Not needed if running on the same VM as Docker</td>
+      <td>Leave blank. Docker socket auto-detected at <code>/var/run/docker.sock</code></td>
+    </tr>
+  </table>
+
+  <hr class="divider" />
+
+  <!-- SECTION 5 -->
+  <h2 id="setup-jumphost">5. Setup on Jumphost</h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>Extract the tar file</h3>
+      <pre>
+mkdir -p /opt/sds-poc
+cd /opt/sds-poc
+tar -xzf /opt/SDS-POC-deploy.tar.gz
+ls    # you should see: src/  package.json  tsconfig.json  .env  README.md</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>Install Node.js 18+</h3>
+      <pre>
+# Check if Node.js is already installed
+node --version
+
+# If not installed — run these:
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node --version      # should show v18.x or higher</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>Install project dependencies</h3>
+      <pre>
+cd /opt/sds-poc
+npm install</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h3>Make sure your user can access Docker</h3>
+      <pre>
+docker ps                         # test access — if permission denied, run:
+sudo usermod -aG docker $USER
+newgrp docker                     # apply without logout
+docker ps                         # verify it works now</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-content">
+      <h3>Update .env with your token and endpoint values</h3>
+      <pre>nano /opt/sds-poc/.env</pre>
+      <p>See <strong>Section 3</strong> for what each value means and <strong>Section 4</strong> for where to get them.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-content">
+      <h3>Build the project</h3>
+      <pre>
+cd /opt/sds-poc
+npm run build     # compiles TypeScript → dist/</pre>
+      <div class="box-green box">
+        ✅ If build succeeds with no errors, the POC is ready to run in mock mode. Plug in the SDK to get real AI analysis.
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- SECTION 6 -->
+  <h2 id="sdk-integration">6. Integrating the Niriksha AI SDK</h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>Download and install the SDK on jumphost</h3>
+      <pre>
+# If you received a .tgz file:
+npm install ./niriksha-sdk-1.0.0.tgz
+
+# If it's on an internal npm registry:
+npm install niriksha-sdk</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>Edit HTTP transport — src/transports/http.ts</h3>
+      <p>Find and replace the 3 TODO comment blocks:</p>
+      <pre>
+// TODO 1 — top of file, replace:
+// import { NirikshAI } from 'niriksha-sdk';
+// WITH:
+import { NirikshAI } from 'niriksha-sdk';
+
+// TODO 2 — inside constructor, replace:
+// this.client = new NirikshAI({ ... });
+// WITH:
+this.client = new NirikshAI({
+  transport: 'http',
+  token: process.env.NIRIKSHA_TOKEN,
+  endpoint: process.env.NIRIKSHA_HTTP_ENDPOINT,
+});
+
+// TODO 3 — inside analyze(), replace:
+// const response = await this.client.analyze(payload);
+// WITH:
+const response = await this.client.analyze(payload);
+return {
+  predictions: response.predictions,
+  severity: response.severity,
+  recommendations: response.recommendations,
+};</pre>
+      <div class="box">
+        ℹ Method name (<code>analyze</code>) and response fields depend on your SDK. Check the SDK docs and adjust accordingly.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>Edit gRPC transport — src/transports/grpc.ts</h3>
+      <p>Same as above — replace the same 3 TODO blocks, but use:</p>
+      <pre>
+this.client = new NirikshAI({
+  transport: 'grpc',
+  token: process.env.NIRIKSHA_TOKEN,
+  endpoint: process.env.NIRIKSHA_GRPC_ENDPOINT,
+});</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h3>Build</h3>
+      <pre>npm run build</pre>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- SECTION 7 -->
+  <h2 id="run">7. How to Run</h2>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>After SDK is integrated</h3>
+      <pre>
+cd /opt/sds-poc
+node dist/index.js</pre>
+    </div>
+    <div class="card">
+      <h3>Before SDK (mock mode)</h3>
+      <pre>
+cd /opt/sds-poc
+node dist/index.js
+# Uses built-in mock analysis</pre>
+    </div>
+  </div>
+
+  <h3>Switch between HTTP and gRPC</h3>
+  <p>Only change one line in <code>.env</code> — no rebuild needed:</p>
+  <pre>
+TRANSPORT=http    # use HTTP
+TRANSPORT=grpc    # use gRPC</pre>
+
+  <h3>Expected output</h3>
+  <pre>
+========================================
+  SDS-POC: Docker Intelligence via Niriksha AI
+  Transport: http
+========================================
+
+[1/9] Collecting Docker host & system info...
+      Host: Ubuntu 22.04 | CPUs: 4 | RAM: 8192MB
+[2/9] Collecting container info...
+      Found 5 container(s) (4 running)
+      ⚠  1 container(s) UNHEALTHY
+...
+[AI]  Sending data to Niriksha AI for analysis...
+
+========================================
+  ANALYSIS RESULT  |  Severity: CRITICAL
+========================================
+
+Predictions:
+  1. Container 'api' health check is FAILING (streak: 5)
+  2. SECURITY: 'postgres' exposes port 5432 to 0.0.0.0
+  3. Image 'nginx:latest' is 120 days old — unpatched CVEs likely
+
+Recommendations:
+  1. Investigate health check for 'api'
+  2. Bind port: -p 127.0.0.1:5432:5432
+  3. Rebuild or update nginx image</pre>
+
+  <hr class="divider" />
+
+  <!-- SECTION 8 -->
+  <h2 id="troubleshooting">8. Troubleshooting</h2>
+
+  <table>
+    <tr><th>Error</th><th>Cause</th><th>Fix</th></tr>
+    <tr>
+      <td><code>permission denied /var/run/docker.sock</code></td>
+      <td>User not in docker group</td>
+      <td><code>sudo usermod -aG docker $USER && newgrp docker</code></td>
+    </tr>
+    <tr>
+      <td><code>Cannot find module 'niriksha-sdk'</code></td>
+      <td>SDK not installed</td>
+      <td><code>npm install ./niriksha-sdk.tgz</code></td>
+    </tr>
+    <tr>
+      <td><code>connect ECONNREFUSED</code></td>
+      <td>Docker not running or wrong DOCKER_HOST</td>
+      <td>Check <code>sudo systemctl status docker</code></td>
+    </tr>
+    <tr>
+      <td><code>401 Unauthorized</code> from AI</td>
+      <td>Wrong or missing NIRIKSHA_TOKEN</td>
+      <td>Check token in <code>.env</code></td>
+    </tr>
+    <tr>
+      <td><code>tsc: command not found</code></td>
+      <td>TypeScript not installed</td>
+      <td><code>npm install</code> (installs typescript locally)</td>
+    </tr>
+    <tr>
+      <td>No containers found</td>
+      <td>No containers running on Docker</td>
+      <td>Run <code>docker ps</code> to verify containers exist</td>
+    </tr>
+  </table>
+
+  <hr class="divider" />
+
+  <div class="box-green box">
+    ✅ <strong>Quick checklist before running:</strong><br><br>
+    &nbsp;&nbsp;☐ Node.js 18+ installed on jumphost<br>
+    &nbsp;&nbsp;☐ <code>npm install</code> completed<br>
+    &nbsp;&nbsp;☐ Niriksha SDK installed<br>
+    &nbsp;&nbsp;☐ SDK plugged into <code>http.ts</code> and/or <code>grpc.ts</code><br>
+    &nbsp;&nbsp;☐ <code>npm run build</code> succeeded<br>
+    &nbsp;&nbsp;☐ <code>.env</code> has token, endpoint, and <code>TRANSPORT</code> set<br>
+    &nbsp;&nbsp;☐ User is in <code>docker</code> group (<code>docker ps</code> works)
+  </div>
+
+  <footer>
+    SDS-POC &nbsp;|&nbsp; Docker Container Intelligence via Niriksha AI &nbsp;|&nbsp; Generated 2026-05-28
+  </footer>
+
+</body>
+</html>
