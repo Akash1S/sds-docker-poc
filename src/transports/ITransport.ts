@@ -1,7 +1,6 @@
 export interface DockerPayload {
   system: any;
   containers: any[];
-  logs: any[];
   volumes: any[];
   ports: any[];
   security: any[];

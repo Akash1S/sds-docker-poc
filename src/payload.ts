@@ -1,5 +1,4 @@
 import { ContainerInfo } from './collectors/containers';
-import { ContainerLogs } from './collectors/logs';
 import { VolumeInfo } from './collectors/volumes';
 import { PortInfo, getSensitivePortLabel } from './collectors/ports';
 import { SecurityInfo } from './collectors/security';
@@ -12,7 +11,6 @@ import { DockerPayload } from './transports/ITransport';
 export function buildPayload(
   system: SystemInfo,
   containers: ContainerInfo[],
-  logs: ContainerLogs[],
   volumes: VolumeInfo[],
   ports: PortInfo[],
   security: SecurityInfo[],
@@ -46,14 +44,6 @@ export function buildPayload(
       healthStatus: c.healthStatus,
       healthFailingStreak: c.healthFailingStreak,
       lastHealthLog: c.lastHealthLog,
-    })),
-
-    logs: logs.map((l) => ({
-      container: l.containerName,
-      recentLines: l.lines.slice(-20),
-      errorLines: l.lines.filter((line) =>
-        /error|exception|fatal|oom|killed|timeout/i.test(line)
-      ),
     })),
 
     volumes: volumes.map((v) => ({

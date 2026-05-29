@@ -47,7 +47,6 @@ import { initNiriksha, shutdownNiriksha } from './init';
 initNiriksha();
 
 import { collectContainers } from './collectors/containers';
-import { collectLogs } from './collectors/logs';
 import { collectVolumes } from './collectors/volumes';
 import { collectPorts } from './collectors/ports';
 import { collectSecurity } from './collectors/security';
@@ -79,38 +78,34 @@ async function main() {
   const unhealthy = containers.filter((c) => c.healthStatus === 'unhealthy');
   if (unhealthy.length > 0) console.log(`      ⚠  ${unhealthy.length} UNHEALTHY`);
 
-  console.log('[3/9] Collecting container logs...');
-  const runningNames = containers.filter((c) => c.state === 'running').map((c) => c.name);
-  const logs = await collectLogs(docker, runningNames);
-
-  console.log('[4/9] Collecting volume info...');
+  console.log('[3/8] Collecting volume info...');
   const volumes = await collectVolumes(docker);
   console.log(`      Found ${volumes.length} volume(s)`);
 
-  console.log('[5/9] Collecting port & network exposure...');
+  console.log('[4/8] Collecting port & network exposure...');
   const ports = await collectPorts(docker);
   const publicPorts = ports.filter((p) => p.exposedToPublic).length;
   if (publicPorts > 0) console.log(`      ⚠  ${publicPorts} container(s) with publicly exposed ports`);
 
-  console.log('[6/9] Running security audit...');
+  console.log('[5/8] Running security audit...');
   const security = await collectSecurity(docker);
   const criticalCount = security.filter((s) => s.riskLevel === 'critical').length;
   if (criticalCount > 0) console.log(`      ⚠  ${criticalCount} container(s) with CRITICAL risk`);
 
-  console.log('[7/9] Collecting network topology...');
+  console.log('[6/8] Collecting network topology...');
   const networks = await collectNetworks(docker);
 
-  console.log('[8/9] Collecting image health...');
+  console.log('[7/8] Collecting image health...');
   const images = await collectImages(docker);
   const oldImages = images.filter((i) => i.isOld).length;
   if (oldImages > 0) console.log(`      ⚠  ${oldImages} image(s) older than 90 days`);
 
-  console.log('[9/9] Collecting recent Docker events (last 60 min)...');
+  console.log('[8/8] Collecting recent Docker events (last 60 min)...');
   const events = await collectEvents(docker);
   console.log(`      Found ${events.length} notable event(s)\n`);
 
   console.log('[AI]  Sending to Niriksha AI...\n');
-  const payload = buildPayload(system, containers, logs, volumes, ports, security, networks, images, events);
+  const payload = buildPayload(system, containers, volumes, ports, security, networks, images, events);
   const result = await analyzeWithAI(payload);
 
   console.log('========================================');
